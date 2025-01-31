@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Team Unravel</title>
+  <link rel="stylesheet" href="stylesNew.css">
+</head>
+<body>
+<!-- Navbar Section -->
+<nav class="navbar">
+  <div class="container">
+      <div class="logo">
+          <img src="logo1.jpg" alt="Unravel Logo">
+          <span>UnRavel</span>
+      </div>
+      <ul class="nav-links">
+          <li><a href="#hero">Home</a></li>
+          <li><a href="#about">About Us</a></li>
+          <li><a href="#community">Community Groups</a></li>
+          <li><a href="#counselors">Counselors</a></li>
+          <li><a href="#contact">Contact Us</a></li>
+      </ul>
+      <div class="action-buttons">
+          <button class="btn login-btn">Login</button>
+          <button class="btn signup-btn">Sign Up</button>
+      </div>
+      <div class="hamburger">
+          <span></span>
+          <span></span>
+          <span></span>
+      </div>
+  </div>
+</nav>
+
+<!-- Auth Modals - Add this right after your navbar -->
+<div id="loginModal" class="auth-modal">
+  <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Login</h2>
+      <form id="loginForm" class="auth-form">
+          <div class="form-group">
+              <label for="loginEmail">Email</label>
+              <input type="email" id="loginEmail" required>
+          </div>
+          <div class="form-group">
+              <label for="loginPassword">Password</label>
+              <input type="password" id="loginPassword" required>
+          </div>
+          <button type="submit">Login</button>
+      </form>
+  </div>
+</div>
+
+<div id="signupModal" class="auth-modal">
+  <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Sign Up</h2>
+      <form id="signupForm" class="auth-form">
+          <div class="form-group">
+              <label for="signupName">Full Name</label>
+              <input type="text" id="signupName" required>
+          </div>
+          <div class="form-group">
+              <label for="signupEmail">Email</label>
+              <input type="email" id="signupEmail" required>
+          </div>
+          <div class="form-group">
+              <label for="signupPassword">Password</label>
+              <input type="password" id="signupPassword" required minlength="6">
+          </div>
+          <div class="form-group">
+              <label for="confirmPassword">Confirm Password</label>
+              <input type="password" id="confirmPassword" required>
+          </div>
+          <button type="submit">Sign Up</button>
+      </form>
+  </div>
+</div>
+
+
+<script>
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Existing hamburger menu code (if any)
+    const hamburger = document.querySelector('.hamburger');
+    const navLinks = document.querySelector('.nav-links');
+    
+    hamburger?.addEventListener('click', () => {
+        navLinks.classList.toggle('show');
+    });
+
+    // Auth functionality
+    const loginBtn = document.querySelector('.login-btn');
+    const signupBtn = document.querySelector('.signup-btn');
+    const loginModal = document.getElementById('loginModal');
+    const signupModal = document.getElementById('signupModal');
+    const loginForm = document.getElementById('loginForm');
+    const signupForm = document.getElementById('signupForm');
+    const closeButtons = document.querySelectorAll('.close');
+
+    // Show Modals
+    loginBtn.addEventListener('click', () => loginModal.style.display = 'block');
+    signupBtn.addEventListener('click', () => signupModal.style.display = 'block');
+
+    // Close Modals
+    closeButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            loginModal.style.display = 'none';
+            signupModal.style.display = 'none';
+        });
+    });
+
+    // Close on outside click
+    window.addEventListener('click', function(event) {
+        if (event.target === loginModal || event.target === signupModal) {
+            loginModal.style.display = 'none';
+            signupModal.style.display = 'none';
+        }
+    });
+
+    // Signup Form Handler
+    signupForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const name = document.getElementById('signupName').value;
+        const email = document.getElementById('signupEmail').value;
+        const password = document.getElementById('signupPassword').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+
+        if (password !== confirmPassword) {
+            alert('Passwords do not match!');
+            return;
+        }
+
+        const users = JSON.parse(localStorage.getItem('users') || '[]');
+
+        if (users.some(user => user.email === email)) {
+            alert('Email already registered!');
+            return;
+        }
+
+        users.push({ name, email, password });
+        localStorage.setItem('users', JSON.stringify(users));
+        localStorage.setItem('currentUser', JSON.stringify({ name, email }));
+
+        alert('Signup successful!');
+        signupModal.style.display = 'none';
+        updateNavigation(true, name);
+    });
+
+    // Login Form Handler
+    loginForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+        const users = JSON.parse(localStorage.getItem('users') || '[]');
+        const user = users.find(u => u.email === email && u.password === password);
+
+        if (user) {
+            localStorage.setItem('currentUser', JSON.stringify({
+                name: user.name,
+                email: user.email
+            }));
+
+            alert('Login successful!');
+            loginModal.style.display = 'none';
+            updateNavigation(true, user.name);
+        } else {
+            alert('Invalid email or password!');
+        }
+    });
+
+    // Update Navigation
+    function updateNavigation(isLoggedIn, userName = '') {
+        const actionButtons = document.querySelector('.action-buttons');
+        
+        if (isLoggedIn) {
+            actionButtons.innerHTML = `
+                <div class="user-menu">
+                    <button class="user-menu-btn">${userName} ▼</button>
+                    <div class="user-menu-content">
+                        <a href="#profile">Profile</a>
+                        <a href="#settings">Settings</a>
+                        <a href="#" id="logoutBtn">Logout</a>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('logoutBtn').addEventListener('click', function(e) {
+                e.preventDefault();
+                localStorage.removeItem('currentUser');
+                location.reload();
+            });
+
+            const userMenuBtn = document.querySelector('.user-menu-btn');
+            const userMenuContent = document.querySelector('.user-menu-content');
+            
+            userMenuBtn.addEventListener('click', () => {
+                userMenuContent.classList.toggle('show');
+            });
+
+            // Close menu when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!e.target.matches('.user-menu-btn')) {
+                    const dropdowns = document.getElementsByClassName('user-menu-content');
+                    for (const dropdown of dropdowns) {
+                        if (dropdown.classList.contains('show')) {
+                            dropdown.classList.remove('show');
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    // Check for existing login
+    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    if (currentUser) {
+        updateNavigation(true, currentUser.name);
+    }
+});
+
+</script>
+
+
+
+  <!-- Unravel Intro Section -->
+  <section class="hero-section" id = "hero">
+    <!-- Floating Pills -->
+    <div class="floating-pill pill-1">
+        <span>🧠</span>
+        <span>Mental Wellness</span>
+    </div>
+    <div class="floating-pill pill-2">
+        <span>💭</span>
+        <span>Therapy</span>
+    </div>
+    <div class="floating-pill pill-3">
+        <span>🤝</span>
+        <span>Support Groups</span>
+    </div>
+    <div class="floating-pill pill-4">
+        <span>🌟</span>
+        <span>Personal Growth</span>
+    </div>
+    <div class="floating-pill pill-5">
+        <span>💪</span>
+        <span>Resilience</span>
+    </div>
+    <div class="floating-pill pill-6">
+        <span>❤️</span>
+        <span>Self Care</span>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content">
+        <div class="logo-container">
+            <img src="logo1.jpg" alt="Unravel Logo" class="logo-img">
+        </div>
+        
+        <h1 class="main-title">UNRAVEL</h1>
+        
+        <p class="description">
+            Unravel is an exclusive platform offering daily support tailored to individuals dealing with mental health issues. 
+            This website not only aids in identifying specific challenges but also facilitates connections with a community of 
+            like-minded individuals and helps in locating suitable experts and psychiatrists.
+        </p>
+        
+        <a href="https://docs.google.com/forms/d/e/1FAIpQLSeyIgjObcd7xy0lSsFRztF-SwVqNrQFgCGnl90LfJ7uxuNvhg/viewform" 
+           target="_blank" 
+           rel="noopener noreferrer">
+            <button class="cta-button">Fill Out Our Survey Form!</button>
+        </a>
+    </div>
+
+    <!-- Wave SVG -->
+    <svg class="wave" viewBox="0 0 1440 200" xmlns="http://www.w3.org/2000/svg">
+        <path fill="#ffffff" 
+              d="M0,160L48,144C96,128,192,96,288,90.7C384,85,480,107,576,112C672,117,768,107,864,101.3C960,96,1056,96,1152,101.3C1248,107,1344,117,1392,122.7L1440,128L1440,200L1392,200C1344,200,1248,200,1152,200C1056,200,960,200,864,200C768,200,672,200,576,200C480,200,384,200,288,200C192,200,96,200,48,200L0,200Z"/>
+    </svg>
+</section>
+
+
+
+
+
+  <section id="about" class="holistic-healing">
+    <div class="image">
+      <img src="image.jpg" alt="Holistic Healing">
+      <div class="dynamic-text">Heal Together, Find Peace</div>
+    </div>
+    <div class="content">
+      <h2>Our Focus is on Holistic Healing</h2>
+      <p>
+        True healing considers the whole person and not just their parts. The healing process involves acknowledging and
+        confronting past wounds, learning to reframe negative thought patterns, and developing coping strategies to manage
+        emotions and behaviors.
+      </p>
+      <p>
+        It is not always linear, and setbacks may occur, but with persistence and kindness toward oneself, individuals can
+        cultivate resilience, foster personal growth, and move towards a more fulfilling and meaningful life.
+      </p>
+    </div>
+  </section>
+
+  <script src="script.js"></script>
+
+
+
+  <section id="about-section" class="dynamic-section">
+    <div class="about-container">
+      <div class="about-image">
+        <img src="pic.jpeg" alt="Who We Are" />
+        <div class="about-overlay">Who We Are</div>
+      </div>
+      <div class="about-text">
+        <p>
+          In 2023, a group of six students from Techno India University came together with a heartfelt mission: to ensure that mental health support feels accessible, safe, and stigma-free. We understand that for many, societal norms and misconceptions can make seeking help from a psychiatrist feel intimidating or isolating. That’s why we created this platform—to offer peace, care, and support right at your fingertips.
+
+Here, you can connect with compassionate individuals who have walked their own journeys away from depression and anxiety. They understand the struggles and are here to guide you toward a brighter, more fulfilling future.
+
+We also believe in the power of community. By sharing a common space with others who are navigating similar challenges, you can find not only guidance but also motivation. Listening to others’ stories of resilience and growth can inspire hope and help you build a better, more empowered life. Together, we strive to create a support network that uplifts and heals, one conversation at a time.
+        </p>
+      </div>
+    </div>
+  </section>
+
+
+
+  <section id="therapy-help" class="therapy-section">
+    <div class="container">
+      <div class="therapy-content">
+        <h2>How Online Therapy Helps</h2>
+        <p>
+          The first and foremost purpose of online therapy is to give you 
+          <span class="highlight">a safe space for disclosure.</span> 
+          In your online therapy journey, you will know what an uninterrupted conversation feels like. 
+          It's easier to open up because you feel not judged but understood. Further, online counselling 
+          helps <span class="highlight">identify triggers</span> for your emotions and allows you to 
+          <span class="highlight">discover your deep-rooted concerns.</span> With trusted counselor guidance 
+          and practical tools, <span class="highlight">you will feel better, happier, and stronger at every step.</span>
+        </p>
+        <p>
+          You can improve relationships, build confidence, overcome peer pressure, cope with stress, 
+          beat anxiety, and outgrow depression. It will empower you with skill sets to 
+          <span class="highlight">become the best version of yourself.</span>
+        </p>
+        <a href="#counselors" class="btn btn-primary">Start Therapy</a>
+      </div>
+      <div class="therapy-image">
+        <img src="therapy.jpg" alt="Online Therapy Illustration" />
+      </div>
+    </div>
+  </section>
+  
+
+
+
+  <!-- Community Section -->  
+  <section class="safe-space-section" id = "community">
+    <div class="container">
+        <div class="section-header">
+            <h2>Find Your Safe Space</h2>
+            <p>Join our compassionate communities where understanding meets support. Here, you'll find spaces dedicated to shared experiences, mutual growth, and collective healing. Whether you're seeking support or offering it, these groups provide a foundation for connection and recovery.</p>
+        </div>
+
+        <div class="cards-grid">
+            <!-- Anxiety Support Card -->
+            <div class="support-card" data-group="anxiety">
+                <div class="card-icon">😌</div>
+                <h3 class="card-title">Anxiety Warriors</h3>
+                <p class="card-description">A supportive community for those navigating anxiety, panic disorders, and daily stress management.</p>
+                <button class="know-more-btn">Know More</button>
+                <button class="close-btn">×</button>
+                <div class="expanded-content">
+                    <h4>About Anxiety</h4>
+                    <p>Anxiety disorders are the most common mental health concern, affecting millions worldwide.</p>
+                    <h4>Common Symptoms</h4>
+                    <ul>
+                        <li>Persistent worrying</li>
+                        <li>Restlessness or feeling on edge</li>
+                        <li>Difficulty concentrating</li>
+                        <li>Physical symptoms (rapid heartbeat, sweating)</li>
+                    </ul>
+                    <h4>How We Help</h4>
+                    <p>Our community offers coping strategies, mindfulness exercises, and a space to share experiences with others who understand.</p>
+                </div>
+            </div>
+
+            <!-- Depression Support Card -->
+            <div class="support-card" data-group="depression">
+                <div class="card-icon">😢</div>
+                <h3 class="card-title">Hopeful Hearts</h3>
+                <p class="card-description">A caring group for those dealing with depression, loneliness, and finding joy in everyday life.</p>
+                <button class="know-more-btn">Know More</button>
+                <button class="close-btn">×</button>
+                <div class="expanded-content">
+                    <h4>About Depression</h4>
+                    <p>Depression can impact anyone, leading to feelings of sadness, hopelessness, and lack of energy.</p>
+                    <h4>Common Symptoms</h4>
+                    <ul>
+                        <li>Persistent sadness</li>
+                        <li>Loss of interest in activities</li>
+                        <li>Changes in sleep patterns</li>
+                        <li>Feelings of worthlessness</li>
+                    </ul>
+                    <h4>How We Help</h4>
+                    <p>Our community focuses on sharing coping mechanisms, encouraging self-care, and supporting one another through tough times.</p>
+                </div>
+            </div>
+
+            <!-- PTSD Support Card -->
+            <div class="support-card" data-group="ptsd">
+                <div class="card-icon">💔</div>
+                <h3 class="card-title">Healing Souls</h3>
+                <p class="card-description">A sanctuary for those recovering from trauma, PTSD, and emotional scars of the past.</p>
+                <button class="know-more-btn">Know More</button>
+                <button class="close-btn">×</button>
+                <div class="expanded-content">
+                    <h4>About PTSD</h4>
+                    <p>PTSD is a condition triggered by traumatic events, leading to flashbacks, severe anxiety, or nightmares.</p>
+                    <h4>Common Symptoms</h4>
+                    <ul>
+                        <li>Intrusive memories</li>
+                        <li>Hypervigilance</li>
+                        <li>Emotional numbness</li>
+                        <li>Difficulty sleeping</li>
+                    </ul>
+                    <h4>How We Help</h4>
+                    <p>We offer a safe space for sharing, practical coping strategies, and resources for healing and empowerment.</p>
+                </div>
+            </div>
+
+            <!-- Stress Management Support Card -->
+            <div class="support-card" data-group="stress">
+                <div class="card-icon">🌱</div>
+                <h3 class="card-title">Stress Busters</h3>
+                <p class="card-description">A proactive group for managing daily stress and achieving balance in a fast-paced world.</p>
+                <button class="know-more-btn">Know More</button>
+                <button class="close-btn">×</button>
+                <div class="expanded-content">
+                    <h4>About Stress</h4>
+                    <p>Stress affects physical and mental well-being, impacting health and relationships when unchecked.</p>
+                    <h4>Common Symptoms</h4>
+                    <ul>
+                        <li>Headaches</li>
+                        <li>Irritability</li>
+                        <li>Trouble sleeping</li>
+                        <li>Fatigue</li>
+                    </ul>
+                    <h4>How We Help</h4>
+                    <p>Join us for relaxation techniques, time management tips, and mutual support to lead a balanced life.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+  
+  
+  <script>
+  
+  document.addEventListener('DOMContentLoaded', function () {
+    const cards = document.querySelectorAll('.support-card');
+
+    cards.forEach(card => {
+        const knowMoreBtn = card.querySelector('.know-more-btn');
+        const closeBtn = card.querySelector('.close-btn');
+        const expandedContent = card.querySelector('.expanded-content');
+
+        knowMoreBtn.addEventListener('click', () => {
+            // Reset all cards
+            cards.forEach(c => {
+                c.style.gridColumn = '';
+                c.querySelector('.expanded-content').classList.remove('active');
+                c.querySelector('.close-btn').style.display = 'none';
+                c.querySelector('.know-more-btn').style.display = 'block';
+            });
+
+            // Expand clicked card
+            card.style.gridColumn = '1 / -1';
+            expandedContent.classList.add('active');
+            closeBtn.style.display = 'block';
+            knowMoreBtn.style.display = 'none';
+
+            // Smooth scroll to card
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+
+        closeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            card.style.gridColumn = '';
+            expandedContent.classList.remove('active');
+            closeBtn.style.display = 'none';
+            knowMoreBtn.style.display = 'block';
+        });
+    });
+});
+
+  
+  
+  </script>
+
+
+
+
+  <!-- Counselling Section -->
+  <!-- Counselling Section -->
+<section class="counseling-section" id="counselors">
+  <h1 class="section-title">Choose Support, Not Silence. Let's Heal Together.</h1>
+
+  <div class="carousel-container">
+      <div class="carousel" id="counselorCarousel">
+          <div class="carousel-item">
+              <div class="counselor-card">
+                  <img src="profile.png" alt="Dr.Priyanka Singhal" class="counselor-image">
+                  <h3 class="counselor-name">Dr.Priyanka Singhal</h3>
+                  <p class="counselor-qualification">M.Sc in Clinical Psychology</p>
+                  <button class="book-appointment" data-counselor="Dr.Priyanka Singhal">Book Appointment</button>
+              </div>
+          </div>
+          <div class="carousel-item">
+              <div class="counselor-card">
+                  <img src="profile1.png" alt="Dr. Sarmishtha Chakrabarti" class="counselor-image">
+                  <h3 class="counselor-name">Dr. Sarmishtha Chakrabarti</h3>
+                  <p class="counselor-qualification">Ph.D in Counseling Psychology</p>
+                  <button class="book-appointment" data-counselor="Dr. Sarmishtha Chakrabarti">Book Appointment</button>
+              </div>
+          </div>
+          <div class="carousel-item">
+              <div class="counselor-card">
+                  <img src="/placeholder.svg?height=200&width=200" alt="Counselor 3" class="counselor-image">
+                  <h3 class="counselor-name">Dr. Emily Brown</h3>
+                  <p class="counselor-qualification">M.Sc in Health Psychology</p>
+                  <button class="book-appointment" data-counselor="Dr. Emily Brown">Book Appointment</button>
+              </div>
+          </div>
+      </div>
+      <button class="carousel-button prev" id="prevBtn">←</button>
+      <button class="carousel-button next" id="nextBtn">→</button>
+  </div>
+
+  <div class="service-types">
+      <div class="service-type">
+          <div class="service-icon">📹</div>
+          <h3>Video Session</h3>
+      </div>
+      <div class="service-type">
+          <div class="service-icon">🎤</div>
+          <h3>Audio Session</h3>
+      </div>
+      <div class="service-type">
+          <div class="service-icon">💬</div>
+          <h3>Chat Session</h3>
+      </div>
+  </div>
+
+  <div class="features">
+      <p class="feature">✓ Highly qualified team of licensed psychologists</p>
+      <p class="feature">✓ English and all regional Indian languages</p>
+      <p class="feature">✓ 100% private & secure platform</p>
+      <p class="feature">✓ 24/7 support available</p>
+  </div>
+</section>
+
+<!-- Appointment Modal -->
+<div id="appointmentModal" class="modal">
+  <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Book an Appointment</h2>
+      <p id="selectedCounselor"></p>
+      <form id="appointmentForm">
+          <label for="appointmentDate">Select Date:</label>
+          <input type="date" id="appointmentDate" required>
+          <label for="appointmentTime">Select Time:</label>
+          <select id="appointmentTime" required>
+              <option value="">Choose a time</option>
+              <option value="09:00">09:00 AM</option>
+              <option value="10:00">10:00 AM</option>
+              <option value="11:00">11:00 AM</option>
+              <option value="14:00">02:00 PM</option>
+              <option value="15:00">03:00 PM</option>
+              <option value="16:00">04:00 PM</option>
+          </select>
+          <button type="submit">Book Appointment</button>
+      </form>
+      <p id="appointmentStatus"></p>
+  </div>
+</div>
+
+<script>
+
+document.addEventListener('DOMContentLoaded', function() {
+    const carousel = document.getElementById('counselorCarousel');
+    const items = carousel.querySelectorAll('.carousel-item');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const modal = document.getElementById('appointmentModal');
+    const closeBtn = modal.querySelector('.close');
+    
+    let currentIndex = 0;
+    const totalItems = items.length;
+
+    // Set initial positions
+    function setupCarousel() {
+        items.forEach((item, index) => {
+            item.style.position = 'absolute';
+            item.style.left = `${index * 100}%`;
+        });
+    }
+
+    setupCarousel();
+
+    function moveCarousel(direction) {
+        if (direction === 'next') {
+            currentIndex = (currentIndex + 1) % totalItems;
+        } else {
+            currentIndex = (currentIndex - 1 + totalItems) % totalItems;
+        }
+
+        items.forEach((item, index) => {
+            item.style.transform = `translateX(-${currentIndex * 100}%)`;
+            item.style.transition = 'transform 0.5s ease-in-out';
+        });
+    }
+
+    // Event Listeners
+    prevBtn.addEventListener('click', () => moveCarousel('prev'));
+    nextBtn.addEventListener('click', () => moveCarousel('next'));
+
+    // Appointment Modal functionality
+    document.querySelectorAll('.book-appointment').forEach(button => {
+        button.addEventListener('click', function() {
+            const counselor = this.getAttribute('data-counselor');
+            document.getElementById('selectedCounselor').textContent = 
+                `Booking appointment with ${counselor}`;
+            modal.style.display = 'block';
+        });
+    });
+
+    closeBtn.onclick = function() {
+        modal.style.display = 'none';
+    }
+
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = 'none';
+        }
+    }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Existing carousel code remains the same
+    const carousel = document.getElementById('counselorCarousel');
+    const items = carousel.querySelectorAll('.carousel-item');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const modal = document.getElementById('appointmentModal');
+    const closeBtn = modal.querySelector('.close');
+    const appointmentForm = document.getElementById('appointmentForm');
+    const selectedCounselorElement = document.getElementById('selectedCounselor');
+    const appointmentStatusElement = document.getElementById('appointmentStatus');
+
+    // Appointment Management System
+    const MAX_SLOTS = 2; // Maximum appointments per slot, reduced to 2
+    const appointments = {};
+
+    // Initialize appointment tracking
+    function initializeAppointmentSlot(counselor, date, time) {
+        if (!appointments[counselor]) {
+            appointments[counselor] = {};
+        }
+        if (!appointments[counselor][date]) {
+            appointments[counselor][date] = {};
+        }
+        if (!appointments[counselor][date][time]) {
+            appointments[counselor][date][time] = 0;
+        }
+    }
+
+    // Check slot availability
+    function checkAvailability(counselor, date, time) {
+        initializeAppointmentSlot(counselor, date, time);
+        const currentBookings = appointments[counselor][date][time];
+        
+        if (currentBookings < MAX_SLOTS) {
+            return {
+                available: true,
+                waitingNumber: 0
+            };
+        } else {
+            return {
+                available: false,
+                waitingNumber: currentBookings - MAX_SLOTS + 1
+            };
+        }
+    }
+
+    // Book appointment
+    function bookAppointment(counselor, date, time) {
+        initializeAppointmentSlot(counselor, date, time);
+        appointments[counselor][date][time]++;
+        return checkAvailability(counselor, date, time);
+    }
+
+    // Current counselor tracking
+    let currentCounselor = '';
+
+    // Event Listeners for booking buttons
+    document.querySelectorAll('.book-appointment').forEach(button => {
+        button.addEventListener('click', function() {
+            currentCounselor = this.getAttribute('data-counselor');
+            selectedCounselorElement.textContent = `Booking appointment with ${currentCounselor}`;
+            
+            // Reset form and status
+            appointmentForm.reset();
+            appointmentStatusElement.textContent = '';
+            
+            // Show available dates
+            const dateInput = document.getElementById('appointmentDate');
+            const today = new Date();
+            dateInput.min = today.toISOString().split('T')[0];
+            
+            modal.style.display = 'block';
+        });
+    });
+
+    // Form submission handler
+    appointmentForm.onsubmit = function(e) {
+        e.preventDefault();
+        
+        const date = document.getElementById('appointmentDate').value;
+        const time = document.getElementById('appointmentTime').value;
+        
+        // Check and book appointment
+        const result = bookAppointment(currentCounselor, date, time);
+        
+        if (result.available) {
+            appointmentStatusElement.textContent = 
+                `Appointment confirmed for ${date} at ${time}. Confirmation sent to your email.`;
+            appointmentStatusElement.style.color = 'green';
+        } else {
+            appointmentStatusElement.textContent = 
+                `This slot is fully booked. You are number ${result.waitingNumber} on the waiting list.`;
+            appointmentStatusElement.style.color = '#ff6b6b';
+        }
+
+        // Display current slot status
+        const totalBookings = appointments[currentCounselor][date][time];
+        const slotsRemaining = Math.max(0, MAX_SLOTS - totalBookings);
+        
+        const statusUpdate = document.createElement('p');
+        statusUpdate.textContent = `Slots remaining: ${slotsRemaining}`;
+        statusUpdate.style.marginTop = '10px';
+        statusUpdate.style.fontSize = '0.9em';
+        statusUpdate.style.color = slotsRemaining > 0 ? 'green' : '#666';
+        appointmentStatusElement.appendChild(statusUpdate);
+
+        // Reset the submit button state
+        document.querySelector('#appointmentForm button[type="submit"]').disabled = false;
+    };
+
+    // Close modal handlers
+    closeBtn.onclick = function() {
+        modal.style.display = 'none';
+    }
+
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = 'none';
+        }
+    }
+
+    // Carousel functionality remains the same
+    let currentIndex = 0;
+    const totalItems = items.length;
+
+    function setupCarousel() {
+        items.forEach((item, index) => {
+            item.style.position = 'absolute';
+            item.style.left = `${index * 100}%`;
+        });
+    }
+
+    setupCarousel();
+
+    function moveCarousel(direction) {
+        if (direction === 'next') {
+            currentIndex = (currentIndex + 1) % totalItems;
+        } else {
+            currentIndex = (currentIndex - 1 + totalItems) % totalItems;
+        }
+
+        items.forEach((item, index) => {
+            item.style.transform = `translateX(-${currentIndex * 100}%)`;
+            item.style.transition = 'transform 0.5s ease-in-out';
+        });
+    }
+
+    prevBtn.addEventListener('click', () => moveCarousel('prev'));
+    nextBtn.addEventListener('click', () => moveCarousel('next'));
+});
+</script>
+
+
+<section class="contact-section" id="contact">
+  <div class="container">
+    <div class="contact-grid">
+      <div class="contact-info">
+        <h2>Need Someone to Talk To?</h2>
+<p>
+  We are a group of passionate students from Kolkata working to create a safe and welcoming platform where anyone can share their feelings without judgment. Whether you're looking for someone to listen, guidance, or a supportive space, we're here for you.
+</p>
+</div>
+<div class="contact-details">
+  <h3>How to Reach Us</h3>
+  <p>24/7 Helpline: +91 99999 88888 (Example)</p>
+  <p>Email: support@mentalhealthkolkata.org</p>
+  <p>
+    For general inquiries, we aim to respond within 24 hours. If you’re in need of immediate support, please reach out to one of the helplines mentioned below.
+  </p>
+  <h3>Crisis Resources</h3>
+  <p>
+    iCall Mental Health Helpline (TISS): +91 9152987821<br />
+    Available Monday to Saturday, 10 AM to 8 PM
+  </p>
+  <p>
+    Kolkata-based NGO Helpline: +91 98300 12345 (Example)<br />
+    Available for immediate emotional support and crisis intervention.
+  </p>
+</div>
+</div>
+
+<div class="team-section">
+  <h2>Meet Our Dedicated Team</h2>
+  <p>
+    We are a group of students from Kolkata driven by a shared goal to make mental health support more accessible and stigma-free. Our team is dedicated to creating a platform where everyone feels valued, heard, and supported.
+  </p>
+
+
+      <div class="team-grid">
+        <div class="team-member">
+          <div class="member-image">
+            <img src="mriganka.jpg" alt="Mriganka Debnath" />
+          </div>
+          <h3 class="member-name">Mriganka Debnath</h3>
+        </div>
+
+        <div class="team-member">
+          <div class="member-image">
+            <img src="shreyashi.jpg" alt="Dr. Michael Rodriguez" />
+          </div>
+          <h3 class="member-name">Shreyasi Chatterjee</h3>
+        </div>
+
+        <div class="team-member">
+          <div class="member-image">
+            <img src="pritha.jpg" alt="Emma Thompson" />
+          </div>
+          <h3 class="member-name">Pritha Basak</h3>
+        </div>
+
+        <div class="team-member">
+          <div class="member-image">
+            <img src="adnan.jpg" alt="Dr. James Wilson" />
+          </div>
+          <h3 class="member-name">Adnan Sultan</h3>
+        </div>
+
+        <div class="team-member">
+          <div class="member-image">
+            <img src="sanjana.jpg" alt="Dr. Priya Patel" />
+          </div>
+          <h3 class="member-name">Sanjana</h3>
+        </div>
+
+        <div class="team-member">
+          <div class="member-image">
+            <img src="boy.jpg" alt="Alex Martinez" />
+          </div>
+          <h3 class="member-name">Mousam</h3>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Add this to your existing HTML file where you want the feedback form to appear -->
+<section class="feedback-section">
+  <div class="container">
+    <h2>We'd Love to Hear from You</h2>
+    <p>Your feedback helps us improve our services and support our community better.</p>
+    <form id="feedbackForm">
+      <div class="form-group">
+        <label for="name">Name</label>
+        <input type="text" id="name" required>
+      </div>
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" required>
+      </div>
+      <div class="form-group">
+        <label for="subject">Message Related To</label>
+        <select id="subject" required>
+          <option value="">Please select</option>
+          <option value="Counseling">Counseling Services</option>
+          <option value="Community Groups">Community Groups</option>
+          <option value="Website Usage">Website Usage</option>
+          <option value="Counseling Doctors">Counseling Doctors</option>
+          <option value="Mental Health Resources">Mental Health Resources</option>
+          <option value="Support Programs">Support Programs</option>
+          <option value="Others">Others</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="message">Your Message</label>
+        <textarea id="message" required></textarea>
+      </div>
+      <button type="submit" class="submit-btn">Send Message</button>
+    </form>
+  </div>
+</section>
+
+
+
+<script>
+
+  // Add this to your existing JavaScript file or in a <script> tag at the end of your HTML body
+document.addEventListener('DOMContentLoaded', function() {
+  const form = document.getElementById('feedbackForm');
+  
+  form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const name = document.getElementById('name').value;
+    const email = document.getElementById('email').value;
+    const subject = document.getElementById('subject').value;
+    const message = document.getElementById('message').value;
+    
+    // In a real application, you would send this data to your server
+    // For demonstration, we'll log it to the console
+    console.log('Sending email with:', { name, email, subject, message });
+    
+    // Show a thank you message (you can replace this with a more user-friendly notification)
+    alert('Thank you for your feedback! We will get back to you soon.');
+    
+    // Reset form
+    form.reset();
+  });
+});
+
+</script>
+
+
+
+
+</body>
+</html>
